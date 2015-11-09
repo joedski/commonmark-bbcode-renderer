@@ -1,0 +1,49 @@
+Whitespace Between Elements
+===========================
+
+Collected thoughts on how emitted elements should have white space inserted between them.
+
+
+
+Whitespace Between Block Elements
+---------------------------------
+
+> Note: These rules were delevoped while poking proboards, so the exact rules may vary between forums.
+
+- `\n` is inserted between pairs of Lists.
+- `\n` is inserted between any pairs of block elements contained by a List Item whose Parent List is Tight.
+- Nothing is inserted between pairs of List Items of a Tight List.
+- `\n` is inserted between any other pairs of List Items.
+- `\n` is inserted between a List and a following Paragraph.
+	- What if it's inside a list?
+- `\n\n` is inserted between any other pairs of block elements.
+
+### Extra (Optional) Rule
+
+- An extra `\n` is inserted between any Block Element and a following Header of level 2 or lower.
+
+
+
+Whitespace Surrounding Block Elements
+-------------------------------------
+
+- `\n` is inserted before the first List Item of a Non-Tight List.
+- Nothing is inserted before the first Block Element under any other conditions.
+- Nothing is inserted after the last Block Element.
+
+
+
+Whitespace Between Inline Elements
+----------------------------------
+
+- Nothing is inserted between pairs of Inline Elements.
+- Nothing is inserted before the first Inline Element.
+- Nothing is inserted after the last Inline Element.
+
+
+
+Explicit Line Breaks
+--------------------
+
+- A Soft Line Break is interpreted as a Space.
+- A Hard Line Break is interpreted as a `\n`.

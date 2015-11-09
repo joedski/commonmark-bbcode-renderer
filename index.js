@@ -38,8 +38,8 @@
 
 function renderNodes( block ) {
 	var event, node, entering;
-
 	var headerStyling;
+
 	var walker = block.walker();
 	var buffer = '';
 
@@ -80,7 +80,7 @@ function renderNodes( block ) {
 				break;
 
 			//////// Inline
-			
+
 			//// Container Inlines
 
 			case 'Emph':
@@ -101,6 +101,15 @@ function renderNodes( block ) {
 				}
 				break;
 
+			case 'Link':
+				if( entering ) {
+					out( '[url="' + node.destination + '"]' );
+				}
+				else {
+					out( '[/url]' );
+				}
+				break;
+
 			//// Noncontainer Inlines (Inline Leaf Nodes)
 
 			case 'Code':
@@ -116,10 +125,6 @@ function renderNodes( block ) {
 			case 'Html':
 				// Note: Safe?  Unsafe?
 				out( node.literal );
-				break;
-
-			case 'Link':
-				out( '[url="' + node.destination + '"]' + node.title + '[/url]' );
 				break;
 
 			case 'Image':
@@ -152,18 +157,20 @@ function renderNodes( block ) {
 				// Note: Proboards uses [ol] and [ul], while others use [list].  However, Proboards also supports [list] it seems, as a synonym to [ul].
 				if( entering ) {
 					if( node.listType == 'Ordered' ) {
-						out( '[ol]' );
+						// types: decimal, upper-alpha, lower-alpha, upper-roman, lower-roman
+						out( '[' + (this.htmlListTags ? 'ol' : 'list') + ' type="' + this.orderedListType + '"]' );
 					}
 					else {
-						out( '[ul type="disc"]' );
+						// types: disc, circle, square
+						out( '[' + (this.htmlListTags ? 'ul' : 'list') + ' type="' + this.unorderedListType + '"]' );
 					}
 				}
 				else {
 					if( node.listType == 'Ordered' ) {
-						out( '[/ol]' );
+						out( '[/' + (this.htmlListTags ? 'ol' : 'list') + ']' );
 					}
 					else {
-						out( '[/ul]' );
+						out( '[/' + (this.htmlListTags ? 'ul' : 'list') + ']' );
 					}
 				}
 				break;
@@ -174,13 +181,17 @@ function renderNodes( block ) {
 				break;
 
 			case 'Header':
-				headerStyling = this.getHeaderStyling( node );
-				
+				var headerStyling = this.getHeaderStyling( node );
+
 				if( entering ) {
 					out( '[size="' + headerStyling.size + '"]' );
 					out( headerStyling.bold ? '[b]' : '' );
+					out( headerStyling.italic ? '[i]' : '' );
+					out( headerStyling.underline ? '[u]' : '' );
 				}
 				else {
+					out( headerStyling.underline ? '[/u]' : '' );
+					out( headerStyling.italic ? '[/i]' : '' );
 					out( headerStyling.bold ? '[/b]' : '' );
 					out( '[/size]' );
 				}
@@ -263,7 +274,6 @@ function headerStyleForLevel( headerLevel ) {
 	headerLevel = Math.round( Math.max( Math.min( headerLevel, 6 ), 1 ) );
 
 	var size = [
-		7, // 0...
 		6, // h1
 		5, // h2
 		5, // h3
@@ -273,7 +283,6 @@ function headerStyleForLevel( headerLevel ) {
 	];
 
 	var bold = [
-		true, // 0...
 		false, // h1
 		true, // h2
 		false, // h3
@@ -282,8 +291,25 @@ function headerStyleForLevel( headerLevel ) {
 		true, // h6
 	];
 
+	var italic = [
+		false, // h1
+		false, // h2
+		false, // h3
+		false, // h4
+		false, // h5
+		false, // h6
+	];
+
+	var underline = [
+		false, // h1
+		false, // h2
+		false, // h3
+		false, // h4
+		false, // h5
+		false, // h6
+	];
+
 	var spacing = [
-		'\n', // 0...
 		'\n', // h1
 		'\n', // h2
 		'', // h3
@@ -293,9 +319,11 @@ function headerStyleForLevel( headerLevel ) {
 	];
 
 	return {
-		size: String( size[ headerLevel ] || 4 ),
-		bold: !! bold[ headerLevel ],
-		additionalSpacingBefore: spacing[ headerLevel ]
+		size: String( size[ headerLevel - 1 ] ),
+		bold: !! bold[ headerLevel - 1 ],
+		italic: !! italic[ headerLevel - 1 ],
+		underline: !! underline[ headerLevel - 1 ],
+		additionalSpacingBefore: spacing[ headerLevel - 1 ]
 	};
 }
 
@@ -303,7 +331,19 @@ function BBCodeRenderer( options ) {
 	options = options || {};
 
 	return {
-		// TODO: Some way to configure the list tag output to switch between [ul] and [list]?
+		// Boolean: Wether to use HTML-style tag names for lists.
+		// `true` indicates you want to use tags like [ul] for unordered and [ol] for ordered.
+		// `false` indicates you want to use [list type="..."] for both, with unordered defaulting to "disc" and ordered defaulting to "decimal".
+		//     Note that not all list types may be supported for all forums.
+		htmlListTags: true,
+
+		// String: What ordered-list type to assign the list tag.
+		// Common values are: 'decimal', 'upper-alpha', 'lower-alpha', 'upper-roman', 'lower-roman'
+		orderedListType: 'decimal',
+
+		// String: What unordered-list type to assign the list tag.
+		// Common values are: 'disc' (solid dot), 'circle' (open dot), 'square' (solid square)
+		unorderedListType: 'disc',
 
 		// getHeaderStyling - Return an object with two properties:
 		// - size: String - A font size to use.  Most forums support a 1-7 scale, though many also support explicit pt sizes like "18pt", too.
