@@ -47,7 +47,7 @@ The object returned by `require`ing this module is a function which takes an opt
 		- `bold` Boolean indicating whether to make the text bold as well.
 		- `italic` Boolean indicating whether to make the text italic as well.
 		- `underline` Boolean indicating whether to make the text underlined as well.
-		- `additionalSpacingBefore` String with the additional white space to add before the header node.  Usually either `'\n'` or `''`. (New line or empty string.)
+		- `additionalSpacingBefore` String with the additional white space to add before the header node.  Usually either `'\n'` (For H1 and H2) or `''`. (For H3 through H6)
 - `htmlListTags` Boolean indicating whether or not to use HTML list tag names.
 	- `true` means outputting `[ol type="..."]` for ordered lists and `[ul type="..."]` for unordered lists.
 	- `false` means outputting `[list type="..."]` for both, where only the `type="..."` part varies.

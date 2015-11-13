@@ -89,8 +89,18 @@ function renderNodes( block ) {
 
 			case 'Image':
 				// Image nodes are containers like links, I think.  This may need revising.
-				if( entering )
-					out( '[img src="' + node.destination + '" style="max-width: 100%;" alt="' + node.title + '"]' );
+				if( entering ) {
+					out( '[img src="' + node.destination + '" style="max-width: 100%;" alt="' );
+				}
+				else {
+					out( '"' );
+
+					if( node.title ) {
+						out( ' title="' + node.title + '"' );
+					}
+
+					out( ']' );
+				}
 				break;
 
 			//////// Blocks
