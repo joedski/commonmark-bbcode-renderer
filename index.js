@@ -1,49 +1,9 @@
-// Whitespace Rules
-// ----------------
-// 
-// ### Whitespace Between Block Elements
-// 
-// - `\n` is inserted between pairs of Lists.
-// - `\n` is inserted between any pairs of block elements contained by a List Item whose Parent List is Tight.
-// - Nothing is inserted between pairs of List Items of a Tight List.
-// - `\n` is inserted between any other pairs of List Items.
-// - `\n` is inserted between a List and a following Paragraph.
-// 	- What if it's inside a list?
-// - `\n\n` is inserted between any other pairs of block elements.
-// 
-// - An extra `\n` is inserted between any Block Element and a following Header
-// 
-// ### Whitespace Before and After Block Elements
-// 
-// - `\n` is inserted before the first List Item of a Non-Tight List.
-// - Nothing is inserted before the first Block Element under any other condiitions.
-// - Nothing is inserted after the last Block Element.
-// 
-// ### Whitespace Between Inline Elements
-// 
-// - Nothing is inserted between pairs of Inline Elements.
-// - Nothing is inserted before the first Inline Element.
-// - Nothing is inserted after the last Inline Element.
-// 
-// ### Explicit Line Breaks
-// 
-// - A Soft Line Break is interpreted as a Space.
-// - A Hard Line Break is interpreted as a `\n`.
-
-// The Html writer uses this.
-// var escapeXml = require( 'commonmark/common' ).escapeXml;
-
-// This is more or less copied from the HTML one.  Hand copied, like a fine illuminated manuscript,
-// but without any illumination.
-
 function renderNodes( block ) {
 	var event, node, entering;
 	var headerStyling;
 
 	var walker = block.walker();
 	var buffer = '';
-
-	var esc = this.escape;
 
 	function out( s ) {
 		buffer += s;
@@ -56,7 +16,7 @@ function renderNodes( block ) {
 		//// Pre-Whitespace
 
 		if( entering && ! node.prev && node.type == 'Item' ) {
-			if( ! node.parent.listTight ) {
+			if( ! node.parent.listTight && ! (node.parent.parent && node.parent.parent.type == 'Item') ) {
 				out( '\n' );
 			}
 		}
@@ -128,7 +88,9 @@ function renderNodes( block ) {
 				break;
 
 			case 'Image':
-				out( '[img src="' + node.destination + '" style="max-width: 100%;" alt="' + node.title + '"]' );
+				// Image nodes are containers like links, I think.  This may need revising.
+				if( entering )
+					out( '[img src="' + node.destination + '" style="max-width: 100%;" alt="' + node.title + '"]' );
 				break;
 
 			//////// Blocks
@@ -154,7 +116,7 @@ function renderNodes( block ) {
 				break;
 
 			case 'List':
-				// Note: Proboards uses [ol] and [ul], while others use [list].  However, Proboards also supports [list] it seems, as a synonym to [ul].
+				// Note: Proboards uses both of using [ol] and [ul], and using [list].  Others may or may not.  Who knows!
 				if( entering ) {
 					if( node.listType == 'Ordered' ) {
 						// types: decimal, upper-alpha, lower-alpha, upper-roman, lower-roman
@@ -181,7 +143,7 @@ function renderNodes( block ) {
 				break;
 
 			case 'Header':
-				var headerStyling = this.getHeaderStyling( node );
+				headerStyling = this.getHeaderStyling( node );
 
 				if( entering ) {
 					out( '[size="' + headerStyling.size + '"]' );
@@ -327,10 +289,23 @@ function headerStyleForLevel( headerLevel ) {
 	};
 }
 
+function defaults() {
+	var objs = Array.prototype.slice.call( arguments, 0 );
+
+	return objs.reduce( function( result, o ) {
+		if( o ) Object.keys( o ).forEach( function( pn ) {
+			if( ! result.hasOwnProperty( pn ) )
+				result[ pn ] = o[ pn ];
+		});
+
+		return result;
+	}, {});
+}
+
 function BBCodeRenderer( options ) {
 	options = options || {};
 
-	return {
+	return defaults( options, {
 		// Boolean: Wether to use HTML-style tag names for lists.
 		// `true` indicates you want to use tags like [ul] for unordered and [ol] for ordered.
 		// `false` indicates you want to use [list type="..."] for both, with unordered defaulting to "disc" and ordered defaulting to "decimal".
@@ -345,13 +320,17 @@ function BBCodeRenderer( options ) {
 		// Common values are: 'disc' (solid dot), 'circle' (open dot), 'square' (solid square)
 		unorderedListType: 'disc',
 
-		// getHeaderStyling - Return an object with two properties:
+		// getHeaderStyling - Return an object with a few properties:
 		// - size: String - A font size to use.  Most forums support a 1-7 scale, though many also support explicit pt sizes like "18pt", too.
 		// - bold: Boolean - Whether or not to insert [b] tags.
+		// - italic: Boolean - Whether or not to insert [i] tags.
+		// - underline: Boolean - Whether or not to insert [u] tags.
 		// - additionalSpacingBefore: String - Any spacing to place before between a block element and a Header.
-		getHeaderStyling: options.getHeaderStyling || getHeaderStyling,
+		getHeaderStyling: getHeaderStyling,
+
+		// Function( Node ) :String - Renders the nodes into BBCode.
 		render: renderNodes
-	};
+	});
 }
 
 module.exports = BBCodeRenderer;

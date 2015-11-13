@@ -28,14 +28,37 @@ fs.readFile( process.argv[ 2 ], 'utf8', function( error, data ) {
 });
 ```
 
+### API
+
+The object returned by `require`ing this module is a function which takes an options object.  This function itself returns an object with the following properties when invoked.
+
+- The options listed in the following section _Options_.
+- `render( block ) :String` Function that renders the AST handed to it into BBCode.
+	- Arguments:
+		- `block` An AST Node.  Does not need to be the Document node to work, can work at any depth.
+	- Returns a String of BBCode formatted text.
+
 ### Options
 
-- `getHeaderStyling` Function that defines some style attributes for the header node provided.
+- `getHeaderStyling( headerNode ) :Object` Function that defines some style attributes for the header node provided.
 	- Receives an AST Node as its sole argument.
 	- Should return an Object with the following properties:
 		- `size` String indicating the text size.  Can be a number 1-7 or a pt size like `18pt`.
 		- `bold` Boolean indicating whether to make the text bold as well.
-		- `additionalSpacingBefore` String the additional white space to add before the header node.
+		- `italic` Boolean indicating whether to make the text italic as well.
+		- `underline` Boolean indicating whether to make the text underlined as well.
+		- `additionalSpacingBefore` String with the additional white space to add before the header node.  Usually either `'\n'` or `''`. (New line or empty string.)
+- `htmlListTags` Boolean indicating whether or not to use HTML list tag names.
+	- `true` means outputting `[ol type="..."]` for ordered lists and `[ul type="..."]` for unordered lists.
+	- `false` means outputting `[list type="..."]` for both, where only the `type="..."` part varies.
+	- Default: `true`.
+	- Note: Many forums support both.
+- `orderedListType` String indicating what value to put in the `type=""` attribute of ordered lists.
+	- Valid values: `decimal`, `upper-alpha`, `lower-alpha`, `upper-roman`, `lower-roman`
+	- Default: `decimal`.
+- `unorderedListType` String indicating what value to put in the `type=""` attribute of unordered lists.
+	- Valid values: `disc` (solid dot), `circle` (open dot), `square` (solid square)
+	- Default: `disc`.
 
 ### Other
 

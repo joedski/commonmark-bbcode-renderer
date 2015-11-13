@@ -28,6 +28,7 @@ Whitespace Surrounding Block Elements
 -------------------------------------
 
 - `\n` is inserted before the first List Item of a Non-Tight List.
+	- But not when the List is itself contained by an Item.
 - Nothing is inserted before the first Block Element under any other conditions.
 - Nothing is inserted after the last Block Element.
 
