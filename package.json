@@ -1,6 +1,6 @@
 {
   "name": "commonmark-bbcode-renderer",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Renders a Commonmark AST into BBCode with the intent of yielding some fidelity to the source markdown document.",
   "main": "index.js",
   "scripts": {
