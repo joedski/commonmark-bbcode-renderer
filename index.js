@@ -16,7 +16,7 @@ function renderNodes( block ) {
 		//// Pre-Whitespace
 
 		if( entering && ! node.prev && node.type == 'Item' ) {
-			if( ! node.parent.listTight && ! (node.parent.parent && node.parent.parent.type == 'Item') ) {
+			if( ! this.ignoreListTightness && ! shouldBeTight( node ) && ! isNestedList( node.parent ) ) {
 				out( '\n' );
 			}
 		}
@@ -130,11 +130,11 @@ function renderNodes( block ) {
 				if( entering ) {
 					if( node.listType == 'Ordered' ) {
 						// types: decimal, upper-alpha, lower-alpha, upper-roman, lower-roman
-						out( '[' + (this.htmlListTags ? 'ol' : 'list') + ' type="' + this.orderedListType + '"]' );
+						out( '[' + (this.htmlListTags ? 'ol' : 'list') + (this.orderedListType ? ' type="' + this.orderedListType + '"' : '') + ']' );
 					}
 					else {
 						// types: disc, circle, square
-						out( '[' + (this.htmlListTags ? 'ul' : 'list') + ' type="' + this.unorderedListType + '"]' );
+						out( '[' + (this.htmlListTags ? 'ul' : 'list') + (this.unorderedListType ? ' type="' + this.unorderedListType + '"' : '') + ']' );
 					}
 				}
 				else {
@@ -197,13 +197,32 @@ function renderNodes( block ) {
 			}
 			else if( node.type == 'Item' && node.next.type == 'Item' ) {
 				// Technically, checking if both nodes are Items is overkill.
-				if( node.parent.listTight )
+				if( this.ignoreListTightness ) {
 					out( '' );
-				else
+				}
+				else if( node.parent.listTight ) {
+					out( '' );
+				}
+				else {
 					out( '\n' );
+					if( this.extraNonTightListSpacing ) {
+						out( '\n' );
+					}
+				}
 			}
 			else if( node.type == 'List' ) {
 				out( '\n' );
+				// if( ! node.listTight ) {
+				// 	out( '\n' );
+				// }
+			}
+			else if( node.next.type == 'List' ) {
+				if( this.ignoreListTightness || shouldBeTight( node.next ) ) {
+					out( '\n' );
+				}
+				else {
+					out( '\n\n' );
+				}
 			}
 			else {
 				out( '\n\n' );
@@ -213,9 +232,48 @@ function renderNodes( block ) {
 				out( this.getHeaderStyling( node.next ).additionalSpacingBefore );
 			}
 		}
+		else if( ! entering && ! node.next && isBlock( node ) ) {
+			if( ! this.ignoreListTightness && this.extraNonTightListSpacing && node.type == 'List' && ! shouldBeTight( node ) ) {
+				out( '\n' );
+			}
+		}
 	}
 
 	return buffer;
+}
+
+function shouldBeTight( node ) {
+	// Determine if we should be tight.
+	if( node.type == 'Item' ) {
+		return shouldBeTight( node.parent );
+	}
+	else if( node.type == 'List' ) {
+		// If we have no children, return as is. (this shouldn't happen...)
+		if( ! node.firstChild ) return node.listTight;
+
+		// If we have two+ items, return as is.
+		if( node.firstChild != node.lastChild ) return node.listTight;
+
+		// If we have only one item, then check if we're inside a list.
+		if( node.parent && node.parent.type == 'Item' ) {
+			return shouldBeTight( node.parent.parent );
+		}
+	}
+
+	// Non-List/Item nodes cannot be tight.
+	return false;
+}
+
+function isNestedList( node ) {
+	if( node.type == 'Item' ) {
+		return isNestedList( node.parent );
+	}
+
+	if( node.parent && node.parent.type == 'Item' ) {
+		return true;
+	}
+
+	return false;
 }
 
 function isBlock( node ) {
@@ -324,10 +382,12 @@ function BBCodeRenderer( options ) {
 
 		// String: What ordered-list type to assign the list tag.
 		// Common values are: 'decimal', 'upper-alpha', 'lower-alpha', 'upper-roman', 'lower-roman'
+		// Using a falsey value like an empty string will ommit the `type=""` attribute entirely.
 		orderedListType: 'decimal',
 
 		// String: What unordered-list type to assign the list tag.
 		// Common values are: 'disc' (solid dot), 'circle' (open dot), 'square' (solid square)
+		// Using a falsey value like an empty string will ommit the `type=""` attribute entirely.
 		unorderedListType: 'disc',
 
 		// getHeaderStyling - Return an object with a few properties:
@@ -339,7 +399,14 @@ function BBCodeRenderer( options ) {
 		getHeaderStyling: getHeaderStyling,
 
 		// Function( Node ) :String - Renders the nodes into BBCode.
-		render: renderNodes
+		render: renderNodes,
+
+		// Some forums do not support spacing out list items.  From a presentation stand point, it's better to just remove nontightness altogether on these.
+		ignoreListTightness: false,
+
+		// Boolean: Whether or not to insert extra spacing between items of non-tight lists.
+		// This is due to differences in how some forumns handle nested list elements.
+		extraNonTightListSpacing: false
 	});
 }
 
